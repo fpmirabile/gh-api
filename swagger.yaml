@@ -1,50 +1,121 @@
 openapi: 3.0.0
 info:
-  title: GitHub Repos API
+  title: GitHub User Repositories API
   version: 1.0.0
-  description: A simple Express API to fetch GitHub repositories and branches
+  description: API Service to list GitHub repositories (non-forks) and their branches details.
+  contact:
+    name: Fernando Mirabile
+servers:
+  - url: http://localhost:3000/api
+    description: Local Development Server
+tags:
+  - name: Repositories
+    description: GitHub repository operations
+  - name: System
+    description: System health and status
 paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Returns the status of the API service.
+      tags:
+        - System
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: UP
+                  timestamp:
+                    type: string
+                    example: '2024-01-17T18:11:43Z'
+                  uptime:
+                    type: number
+                    example: 120.5
   /users/{username}/repos:
     get:
-      summary: Get GitHub repositories for a user (excluding forks) with branches
+      summary: Get GitHub repositories for a user
+      description: Returns a list of non-fork repositories for the specified GitHub username, including branch details.
+      tags:
+        - Repositories
       parameters:
         - in: path
           name: username
           required: true
+          description: The GitHub username
           schema:
             type: string
+            example: fermirabile
         - in: header
           name: Accept
           required: true
+          description: Must be application/json
           schema:
             type: string
             default: application/json
+            example: application/json
       responses:
         '200':
-          description: OK
+          description: A list of repositories and their branches
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-                    owner:
-                      type: string
-                    branches:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          lastCommitSha:
-                            type: string
+                  $ref: '#/components/schemas/RepositoryResponse'
+        '400':
+          description: Invalid input or missing parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '406':
-          description: Not Acceptable (Bad Header)
-        '500':
-          description: Internal Server Error
+          description: Not Acceptable (Accept header missing or incorrect)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    Branch:
+      type: object
+      properties:
+        name:
+          type: string
+          example: main
+        sha:
+          type: string
+          example: a1b2c3d4...
+    RepositoryResponse:
+      type: object
+      properties:
+        repoName:
+          type: string
+          example: my-awesome-project
+        ownerLogin:
+          type: string
+          example: fermirabile
+        branches:
+          type: array
+          items:
+            $ref: '#/components/schemas/Branch'
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: User not found

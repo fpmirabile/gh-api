@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-export interface Config {
+interface Config {
   port: string | number;
   githubToken: string | undefined;
   githubBaseUrl: string;
