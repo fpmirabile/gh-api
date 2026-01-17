@@ -1,9 +1,7 @@
-import { ApiResponse } from '../middlewares/error.middleware';
+import { Response } from 'express';
 
-declare global {
-  namespace Express {
-    interface Response {
-      success<T>(data: T, status?: number): void;
-    }
+declare module 'express-serve-static-core' {
+  interface Response {
+    success<T>(data: T, status?: number): void;
   }
 }
