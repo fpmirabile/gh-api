@@ -13,7 +13,6 @@ app.use(express.json());
 app.use((_: Request, res: Response, next: NextFunction) => {
   res.success = (data: unknown, status = 200) => {
     res.status(status).json({
-      status,
       data
     });
   };
