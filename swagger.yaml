@@ -1,121 +1,217 @@
 openapi: 3.0.0
 info:
-  title: GitHub User Repositories API
+  title: GitHub Proxy API
   version: 1.0.0
-  description: API Service to list GitHub repositories (non-forks) and their branches details.
+  description: |
+    A service to list GitHub repositories and their branches for a specific user.
+    It acts as a proxy to the GitHub API, adding features like fork filtering and standardizing responses.
   contact:
     name: Fernando Mirabile
 servers:
   - url: http://localhost:3000/api
     description: Local Development Server
-tags:
-  - name: Repositories
-    description: GitHub repository operations
-  - name: System
-    description: System health and status
+
 paths:
-  /health:
+  /users/{username}/repos:
+    parameters:
+      - in: header
+        name: Accept
+        description: Client must explicitly accept 'application/json'.
+        required: true
+        schema:
+          type: string
+          enum: [application/json]
+          default: application/json
+      - in: path
+        name: username
+        required: true
+        schema:
+          type: string
+          minLength: 1
+        description: The GitHub username to search for.
+        example: "fpmirabile"
     get:
-      summary: Health Check
-      description: Returns the status of the API service.
-      tags:
-        - System
+      summary: Get user repositories details
+      description: |
+        Retrieves a list of public repositories for a given GitHub username.
+        By default, it excludes forked repositories unless specified.
+      parameters:
+        - in: query
+          name: includeForks
+          required: false
+          schema:
+            type: boolean
+            default: false
+          description: If true, includes forked repositories in the response.
       responses:
         '200':
-          description: Service is healthy
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: UP
-                  timestamp:
-                    type: string
-                    example: '2024-01-17T18:11:43Z'
-                  uptime:
-                    type: number
-                    example: 120.5
-  /users/{username}/repos:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RepositoryResponse'
+        '400':
+          description: Bad Request - Validation Failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validationError:
+                  summary: Validation Error
+                  value:
+                    status: 400
+                    message: Validation failed
+                    errors:
+                      - msg: includeForks must be a boolean (true/false)
+                        param: includeForks
+                        location: query
+        '403':
+          description: Forbidden - Rate Limit Exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                rateLimit:
+                  summary: GitHub API Rate Limit
+                  value:
+                    status: 403
+                    message: GitHub API rate limit exceeded. Please try again later or provide a GITHUB_TOKEN.
+        '404':
+          description: Not Found - User does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                userNotFound:
+                  summary: User Not Found
+                  value:
+                    status: 404
+                    message: GitHub user or repository not found
+        '406':
+          description: Not Acceptable - Invalid Accept Header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                badHeader:
+                  summary: Invalid Header
+                  value:
+                    status: 406
+                    message: Accept header must be application/json
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internalError:
+                  summary: Server Crash
+                  value:
+                    status: 500
+                    message: Internal Server Error
+        '502':
+          description: Bad Gateway - Upstream GitHub Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                githubError:
+                  summary: Upstream Error
+                  value:
+                    status: 502
+                    message: Error communicating with GitHub
+
+  /health:
     get:
-      summary: Get GitHub repositories for a user
-      description: Returns a list of non-fork repositories for the specified GitHub username, including branch details.
-      tags:
-        - Repositories
-      parameters:
-        - in: path
-          name: username
-          required: true
-          description: The GitHub username
-          schema:
-            type: string
-            example: fermirabile
-        - in: header
-          name: Accept
-          required: true
-          description: Must be application/json
-          schema:
-            type: string
-            default: application/json
-            example: application/json
+      summary: Health Check
+      description: Returns the health status of the API, including uptime and timestamp.
       responses:
         '200':
-          description: A list of repositories and their branches
+          description: API is healthy
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RepositoryResponse'
-        '400':
-          description: Invalid input or missing parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '406':
-          description: Not Acceptable (Accept header missing or incorrect)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      status:
+                        type: string
+                        example: UP
+                      timestamp:
+                        type: string
+                        format: date-time
+                      uptime:
+                        type: number
+                        description: Process uptime in seconds
+              examples:
+                healthy:
+                  summary: Healthy Response
+                  value:
+                    data:
+                      status: UP
+                      timestamp: "2023-10-27T10:00:00.000Z"
+                      uptime: 120.5
+
 components:
   schemas:
     Branch:
       type: object
+      description: Details of a git branch.
       properties:
         name:
           type: string
-          example: main
+          description: The name of the branch.
+          example: "main"
         sha:
           type: string
-          example: a1b2c3d4...
+          description: The SHA has of the last commit on the branch.
+          example: "a1b2c3d4e5f6..."
+    
     RepositoryResponse:
       type: object
+      description: Aggregated repository information including branch details.
       properties:
         repoName:
           type: string
-          example: my-awesome-project
+          description: The name of the repository.
+          example: "express-api"
         ownerLogin:
           type: string
-          example: fermirabile
+          description: The username of the repository owner.
+          example: "google"
         branches:
           type: array
+          description: List of branches in the repository.
           items:
             $ref: '#/components/schemas/Branch'
+
     ErrorResponse:
       type: object
+      description: Standardized error response structure.
       properties:
         status:
           type: integer
+          description: HTTP status code.
           example: 404
         message:
           type: string
-          example: User not found
+          description: Human-readable error message.
+          example: "Resource not found"
+        errors:
+          type: array
+          description: Optional list of validation or detailed errors.
+          items:
+            type: object
