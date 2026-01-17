@@ -12,5 +12,6 @@ coverage
 benchmarks/graphs
 
 # envs
+.env
 .env.*
 !.env.example
