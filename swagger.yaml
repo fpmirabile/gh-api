@@ -1,0 +1,50 @@
+openapi: 3.0.0
+info:
+  title: GitHub Repos API
+  version: 1.0.0
+  description: A simple Express API to fetch GitHub repositories and branches
+paths:
+  /users/{username}/repos:
+    get:
+      summary: Get GitHub repositories for a user (excluding forks) with branches
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Accept
+          required: true
+          schema:
+            type: string
+            default: application/json
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    owner:
+                      type: string
+                    branches:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          lastCommitSha:
+                            type: string
+        '404':
+          description: User not found
+        '406':
+          description: Not Acceptable (Bad Header)
+        '500':
+          description: Internal Server Error
