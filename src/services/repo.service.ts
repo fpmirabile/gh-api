@@ -1,6 +1,7 @@
 import pLimit from 'p-limit';
 import { GitHubClient } from '../clients/github.client';
 import { UserRepoResponse, GitHubRepo, GitHubBranch } from '../interfaces/github.interface';
+import { config } from '../config/env.config';
 
 export class RepoService {
   private githubClient: GitHubClient;
@@ -12,13 +13,8 @@ export class RepoService {
   async getUserReposWithBranches(username: string, includeForks: boolean = false): Promise<UserRepoResponse[]> {
     const repos: GitHubRepo[] = await this.githubClient.getUserRepos(username);
     const filteredRepos = includeForks ? repos : repos.filter((repo: GitHubRepo) => !repo.fork);
-
-    /**
-     * Limiting concurrency to 5 to avoid hitting GitHub API rate limits
-     * and to provide a more predictable performance profile by sending
-     * requests in controlled batches.
-     */
-    const limit = pLimit(5);
+    const concurrency = config.githubToken ? 10 : 2;
+    const limit = pLimit(concurrency);
     const repoDetailsPromises = filteredRepos.map((repo: GitHubRepo) => 
       limit(async () => {
         const branches: GitHubBranch[] = await this.githubClient.getRepoBranches(repo.owner.login, repo.name);
