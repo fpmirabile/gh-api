@@ -1,27 +1,24 @@
 import express from 'express';
 import repoRoutes from './routes/repo.routes';
+import healthRoutes from './routes/health.routes';
 import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
+import YAML from 'yamljs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
 app.use(express.json());
 
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'GitHub Repos API',
-      version: '1.0.0',
-      description: 'A simple Express API to fetch GitHub repositories and branches',
-    },
-  },
-  apis: ['./src/routes/*.ts'],
-};
+const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+const apiRouter = express.Router();
+apiRouter.use('/users', repoRoutes);
+apiRouter.use('/health', healthRoutes);
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-app.use('/users', repoRoutes);
+app.use('/api', apiRouter);
 
 export default app;
