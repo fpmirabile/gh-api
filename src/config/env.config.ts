@@ -11,5 +11,5 @@ interface Config {
 export const config: Config = {
   port: process.env.PORT || 3000,
   githubToken: process.env.GITHUB_TOKEN,
-  githubBaseUrl: 'https://api.github.com'
+  githubBaseUrl: process.env.GITHUB_BASE_URL || 'https://api.github.com'
 };
