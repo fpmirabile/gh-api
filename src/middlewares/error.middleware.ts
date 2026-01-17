@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError, BadRequestError, NotFoundError, GitHubApiError, GitHubRateLimitError } from '../errors/AppError';
+import { AppError } from '../errors/AppError';
 
 export interface ApiResponse<T> {
-  status: number;
   data?: T;
   message?: string;
   errors?: unknown;
@@ -31,7 +30,6 @@ export const errorHandler = (
   }
 
   const response: ApiResponse<null> = {
-    status,
     message,
     ...(typeof errors === 'object' && errors && { errors })
   };
