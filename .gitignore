@@ -15,3 +15,6 @@ benchmarks/graphs
 .env
 .env.*
 !.env.example
+
+# build
+/dist
