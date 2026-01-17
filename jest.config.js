@@ -1,16 +1,7 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} **/
-export default {
-  testEnvironment: "node",
-  extensionsToTreatAsEsm: ['.ts'],
-  moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
-  },
-  transform: {
-    '^.+\\.tsx?$': [
-      'ts-jest',
-      {
-        useESM: true,
-      },
-    ],
-  },
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  testMatch: ['**/tests/**/*.test.ts', '**/tests/**/*.spec.ts', '**/tests/integration/**/*.test.ts'],
+  modulePathIgnorePatterns: ['dist']
 };
