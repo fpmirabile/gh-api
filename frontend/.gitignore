@@ -1,26 +1,7 @@
-# npm
-node_modules
-npm-shrinkwrap.json
-*.log
-*.gz
-
-# Coveralls
-.nyc_output
-coverage
-
-# Benchmarking
-benchmarks/graphs
-
-# envs
-.env
-.env.*
-!.env.example
-
-# build
-/dist
-
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# dependencies
+/node_modules
 /.pnp
 .pnp.js
 

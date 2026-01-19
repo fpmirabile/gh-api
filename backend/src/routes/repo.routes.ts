@@ -20,6 +20,14 @@ router.get(
       .optional()
       .isBoolean()
       .withMessage('includeForks must be a boolean (true/false)'),
+    query('page')
+      .optional()
+      .default(1)
+      .isInt({ min: 1 }),
+    query('per_page')
+      .optional()
+      .default(10)
+      .isInt({ min: 1 }),
     validate
   ],
   repoController.getUserRepos
